@@ -1,5 +1,6 @@
 # Assembly 한 줄을 파싱하여 Instruction 객체로 변환하고
 # operand의 datatype(register / immediate)을 판별하는 parser
+# MOV R1, 5 -> Instruction("Mov", ["R1", 5])
 
 from isa.instruction import Instruction, Opcode
 
