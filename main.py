@@ -1,0 +1,34 @@
+from assembler.assembler import assemble
+from execution.loader import load_program
+from execution.cpu import CPU
+from devices.memory_unit.memory import Memory
+from devices.register_unit.pc import ProgramCounter
+from devices.register_unit.register_file import RegisterFile
+
+
+def main():
+    with open("tests/input.txt", "r") as program:
+        text = program.read()
+
+    # 1. assemble
+    instructions = assemble(text)
+
+    # 2. memory 생성
+    memory = Memory(len(instructions))
+
+    # 3. program load
+    load_program(memory, instructions)
+
+    # 4. pc / registers 생성
+    pc = ProgramCounter()
+    registers = RegisterFile()
+
+    # 5. cpu 생성
+    cpu = CPU(memory, pc, registers)
+
+    # 6. 실행
+    cpu.run()
+
+
+if __name__ == "__main__":
+    main()

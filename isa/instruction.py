@@ -35,3 +35,4 @@ class Opcode:
     ADD = "ADD"
     SUB = "SUB"
     HALT = "HALT"
+    ALL = {MOV, ADD, SUB, HALT}

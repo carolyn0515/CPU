@@ -9,6 +9,8 @@ def parse_operand(token: str):
     
     if token.upper().startswith("R") and token[1:].isdigit():
         return token.upper()
+    elif token.startswith("0x") or token.startswith("0X"):
+        return int(token, 16)
     try:
         return int(token)
     except ValueError:
