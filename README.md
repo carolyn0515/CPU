@@ -1,253 +1,200 @@
+# CPU Simulator
+
+A Von Neumann model CPU simulator implemented in Python.  
+Supports a custom ISA with arithmetic, comparison, and branch instructions — including a working GCD program.
 
 ---
 
-# HW1 CPU Simulator
+## Project Structure
 
-## 1. Overview
-
-This project implements a simple CPU simulator based on the Von Neumann model.
-It supports arithmetic operations, data movement, comparison, branching, and program termination.
-The simulator reads assembly-like programs, assembles them into internal instructions, loads them into memory, and executes them step by step.
-
-The simulator includes the following architectural components:
-
-* Memory
-* Program Counter (PC)
-* Instruction Register (IR)
-* Register File (`R0`–`R9`)
-* Flags
-* CPU
-* Assembler
-* Loader
-
----
-
-## 2. Project Structure
-
-```text
+```
 HW1/
 ├── assembler/
-│   ├── assembler.py
-│   └── parser.py
+│   ├── assembler.py       # 2-pass assembler: label resolution + instruction parsing
+│   └── parser.py          # Tokenizes each line into opcode / operands
 ├── devices/
 │   ├── memory_unit/
-│   │   └── memory.py
+│   │   └── memory.py      # Address-based instruction memory
 │   ├── processing_unit/
-│   │   └── flags.py
+│   │   └── flags.py       # Zero / Negative flag management
 │   └── register_unit/
-│       ├── ir.py
-│       ├── pc.py
-│       └── register_file.py
+│       ├── ir.py           # Instruction Register (IR)
+│       ├── pc.py           # Program Counter (PC)
+│       └── register_file.py  # General-purpose registers R0–R9
 ├── execution/
-│   ├── cpu.py
-│   └── loader.py
+│   ├── cpu.py             # Fetch–Decode–Execute loop
+│   └── loader.py          # Loads instructions into memory
 ├── isa/
-│   └── instruction.py
-├── tests/
-│   ├── ADD.txt
-│   ├── B.txt
-│   ├── B_not_taken.txt
-│   ├── C_equal.txt
-│   ├── C_false.txt
-│   ├── C_true.txt
-│   ├── DIV.txt
-│   ├── DIV_zero.txt
-│   ├── GCD.txt
-│   ├── JN.txt
-│   ├── JZ.txt
-│   ├── MOV.txt
-│   ├── MUL.txt
-│   └── MUL_DIV_mix.txt
-├── main.py
-└── README.md
+│   └── instruction.py     # Instruction dataclass + Opcode definitions
+├── tests/                 # 14 test programs (.txt)
+└── main.py                # Runs all test files
 ```
 
 ---
 
-## 3. Execution Flow
+## Getting Started
 
-The simulator works in the following order:
-
-1. Read program text
-2. Parse each line into an `Instruction`
-3. Resolve labels into instruction addresses
-4. Load instructions into memory
-5. Fetch the current instruction using PC
-6. Store the fetched instruction in IR
-7. Decode and execute the instruction
-8. Update registers, flags, or PC
-9. Stop at `HALT`
-
----
-
-## 4. Supported Instructions
-
-### Arithmetic and Data Movement
-
-* `MOV dst, src`
-* `ADD op1, op2` → `R0 = op1 + op2`
-* `SUB op1, op2` → `R0 = op1 - op2`
-* `MUL op1, op2` → `R0 = op1 * op2`
-* `DIV op1, op2` → `R0 = op1 // op2`
-* `HALT`
-
-### Slide-Based Comparison and Branch
-
-* `C op1, op2`
-
-  * `R0 = 1` if `op1 < op2`
-  * otherwise `R0 = 0`
-* `B target`
-
-  * branch only if `R0 == 1`
-
-### Extended Instructions
-
-* `CMP op1, op2`
-
-  * updates `zero` and `negative` flags from `op1 - op2`
-* `J target`
-* `JZ target`
-* `JN target`
-
----
-
-## 5. Key Design Points
-
-* The simulator explicitly implements both **PC** and **IR** to reflect the Von Neumann model more clearly.
-* Arithmetic results are stored in `R0`.
-* `C` and `B` follow the slide semantics directly.
-* `CMP`, `J`, `JZ`, and `JN` were additionally implemented as extended control-flow instructions.
-* The assembler supports label resolution for `J`, `JZ`, `JN`, and `B`.
-
----
-
-## 6. Error Handling
-
-Division by zero is handled gracefully.
-
-Example:
-
-```text
-MOV R1, 10
-MOV R2, 0
-DIV R1, R2
-HALT
-```
-
-Output:
-
-```text
-Runtime Error: Division by zero
-```
-
----
-
-## 7. Test Programs
-
-The `tests/` directory contains programs for each major function:
-
-* Arithmetic: `ADD.txt`, `MUL.txt`, `DIV.txt`, `DIV_zero.txt`, `MUL_DIV_mix.txt`
-* Data movement: `MOV.txt`
-* `C/B` semantics: `C_true.txt`, `C_false.txt`, `C_equal.txt`, `B.txt`, `B_not_taken.txt`
-* Extended branch instructions: `JN.txt`, `JZ.txt`
-* Full program example: `GCD.txt`
-
----
-
-## 8. Example Output
-
-### Example 1: `ADD.txt`
-
-Program:
-
-```text
-MOV R1, 3
-MOV R2, 7
-ADD R1, R2
-HALT
-```
-
-Output:
-
-```text
-[PC=0] Executing: MOV R1, 3
-[PC=1] Executing: MOV R2, 7
-[PC=2] Executing: ADD R1, R2
-[PC=3] Executing: HALT
-{'R0': 10, 'R1': 3, 'R2': 7, 'R3': 0, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
-```
-
-### Example 2: `B.txt`
-
-Program:
-
-```text
-MOV R1, 1
-MOV R2, 3
-C R1, R2
-B 6
-MOV R3, 0
-J 7
-MOV R3, 1
-HALT
-```
-
-Output:
-
-```text
-[PC=0] Executing: MOV R1, 1
-[PC=1] Executing: MOV R2, 3
-[PC=2] Executing: C R1, R2
-[PC=3] Executing: B 6
-[PC=6] Executing: MOV R3, 1
-[PC=7] Executing: HALT
-{'R0': 1, 'R1': 1, 'R2': 3, 'R3': 1, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
-```
-
-### Example 3: `GCD.txt`
-
-Output:
-
-```text
-[PC=0] Executing: MOV R1, 12
-[PC=1] Executing: MOV R2, 8
-[PC=2] Executing: CMP R1, R2
-[PC=3] Executing: JZ 11
-[PC=4] Executing: JN 8
-[PC=5] Executing: SUB R1, R2
-[PC=6] Executing: MOV R1, R0
-[PC=7] Executing: J 2
-...
-[PC=11] Executing: HALT
-{'R0': 4, 'R1': 4, 'R2': 4, 'R3': 0, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
-```
-
----
-
-## 9. How to Run
-
-Run the simulator with:
+**Requirements:** Python 3.10+, no external libraries.
 
 ```bash
+# Run all test cases
 python main.py
+
+# Run a single test file
+python -c "
+from pathlib import Path
+from main import run_program
+run_program(Path('tests/GCD.txt').read_text())
+"
 ```
 
-The program automatically executes all test files in the `tests/` directory.
+---
+
+## ISA (Instruction Set Architecture)
+
+Instruction format: `OPCODE operand1, operand2`
+
+Operand types:
+- `R0`–`R9` — register
+- integer literal — immediate value (decimal or `0x` hex)
+- label name — resolved to address by the assembler
+
+| Category | Instruction | Operation |
+|---|---|---|
+| Data | `MOV Rd, Src` | Rd ← Src |
+| Arithmetic | `ADD Rd, Rs` | R0 ← Rd + Rs |
+| | `SUB Rd, Rs` | R0 ← Rd − Rs |
+| | `MUL Rd, Rs` | R0 ← Rd × Rs |
+| | `DIV Rd, Rs` | R0 ← Rd ÷ Rs (integer); raises error if Rs == 0 |
+| Comparison | `CMP Rd, Rs` | Updates Zero / Negative flags from (Rd − Rs) |
+| | `C Rd, Rs` | R0 ← 1 if Rd < Rs, else R0 ← 0 |
+| Control | `J target` | PC ← target (unconditional jump) |
+| | `JZ target` | PC ← target if Zero flag is set |
+| | `JN target` | PC ← target if Negative flag is set |
+| | `B target` | PC ← target if R0 == 1 |
+| Termination | `HALT` | Stop execution, print register state |
 
 ---
 
-## 10. Summary
+## Architecture
 
-This project implements a modular CPU simulator with:
+This simulator follows the Von Neumann model with clearly separated components:
 
-* explicit memory, PC, and IR
-* assembler and loader
-* arithmetic and movement instructions
-* slide-based comparison and branch (`C`, `B`)
-* extended control-flow instructions (`CMP`, `J`, `JZ`, `JN`)
-* label-based jumps
-* graceful runtime error handling
-* step-by-step execution trace output
+```
+         ┌─────────┐    Fetch    ┌──────┐
+         │ Memory  │ ──────────► │  IR  │
+         └─────────┘             └──────┘
+              ▲                      │ Decode / Execute
+              │ load                 ▼
+         ┌──────────┐         ┌──────────────┐
+         │  Loader  │         │     CPU      │
+         └──────────┘         │  (cpu.py)    │
+                              └──────┬───────┘
+             ┌────────────────┬──────┘
+             ▼                ▼
+        ┌──────────┐     ┌───────┐
+        │ Register │     │ Flags │
+        │   File   │     │ (Z/N) │
+        └──────────┘     └───────┘
+              ▲
+              │ increment / set
+         ┌────┴───┐
+         │   PC   │
+         └────────┘
+```
+
+**Fetch–Decode–Execute cycle:**
+
+1. `PC.get()` → fetch instruction from Memory
+2. Load into IR
+3. Decode opcode
+4. Resolve operands (register lookup or immediate value)
+5. Execute → update registers / flags
+6. `PC.increment()` or `PC.set(target)` on branch
 
 ---
+
+## Example: GCD
+
+```
+MOV R1, 12
+MOV R2, 8
+LOOP:
+    CMP R1, R2
+    JZ  END
+    JN  LESS
+    SUB R1, R2
+    MOV R1, R0
+    J   LOOP
+LESS:
+    SUB R2, R1
+    MOV R2, R0
+    J   LOOP
+END:
+    HALT
+```
+
+Output:
+```
+[PC=0]  Executing: MOV R1, 12
+[PC=1]  Executing: MOV R2, 8
+[PC=2]  Executing: CMP R1, R2
+[PC=3]  Executing: JZ 11
+[PC=4]  Executing: JN 8
+[PC=5]  Executing: SUB R1, R2       ← 12 - 8 = 4
+[PC=6]  Executing: MOV R1, R0
+[PC=7]  Executing: J 2
+[PC=2]  Executing: CMP R1, R2
+[PC=3]  Executing: JZ 11
+[PC=4]  Executing: JN 8             ← 4 < 8, branch taken
+[PC=8]  Executing: SUB R2, R1       ← 8 - 4 = 4
+[PC=9]  Executing: MOV R2, R0
+[PC=10] Executing: J 2
+[PC=2]  Executing: CMP R1, R2       ← 4 == 4
+[PC=3]  Executing: JZ 11            ← Zero flag set, branch taken
+[PC=11] Executing: HALT
+{'R0': 4, 'R1': 4, 'R2': 4, ...}   ← GCD(12, 8) = 4 ✓
+```
+
+---
+
+## Test Cases
+
+| File | Test | Expected |
+|---|---|---|
+| `ADD.txt` | 3 + 7 | R0 = 10 |
+| `MUL.txt` | 6 × 7 | R0 = 42 |
+| `DIV.txt` | 20 ÷ 4 | R0 = 5 |
+| `DIV_zero.txt` | divide by zero | `Runtime Error: Division by zero` |
+| `MOV.txt` | register-to-register copy | R2 = R1 |
+| `MUL_DIV_mix.txt` | (8 × 3) ÷ 2 | R0 = 12 |
+| `C_true.txt` | 2 < 5 | R0 = 1 |
+| `C_false.txt` | 5 >= 2 | R0 = 0 |
+| `C_equal.txt` | 5 == 5 | R0 = 0 |
+| `B.txt` | branch taken (R0 = 1) | R3 = 1 |
+| `B_not_taken.txt` | branch not taken (R0 = 0) | R3 = 9 |
+| `JZ.txt` | jump on zero flag | skips MOV R0, 999 |
+| `JN.txt` | jump on negative flag | skips MOV R0, 999 |
+| `GCD.txt` | GCD(12, 8) | R0 = R1 = R2 = 4 |
+
+All 14 tests pass.
+
+---
+
+## Design Notes
+
+**2-pass assembler** — `assembler.py` makes two passes over the source: first to build a label-to-address table, then to resolve branch targets. This allows forward references (e.g. `JZ END` before `END:` is defined).
+
+**Instruction Register** — IR is introduced as a separate component to structurally separate the Fetch and Execute stages, mirroring how real processors work.
+
+**Branch vs jump** — `J` / `JZ` / `JN` use CPU flags; `C` / `B` use R0 as a condition register. This keeps the control flow model simple and explicit.
+
+**Division result** — All arithmetic results (ADD / SUB / MUL / DIV) are stored in `R0`. Source registers are not modified.
+
+---
+
+## Build Environment
+
+- Python 3.10
+- macOS
+- No external libraries
