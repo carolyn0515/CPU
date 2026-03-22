@@ -1,13 +1,3 @@
-# assembly text (문자열)
-#    ↓
-# assembler/parser.py
-#    ↓
-# Instruction 객체 생성
-#    ↓
-# isa/instruction.py (객체 구조 정의)
-#    ↓
-# CPU 실행
-
 from dataclasses import dataclass, field
 from typing import List, Union
 
@@ -34,9 +24,22 @@ class Opcode:
     MOV = "MOV"
     ADD = "ADD"
     SUB = "SUB"
-    HALT = "HALT"
+    MUL = "MUL"
+    DIV = "DIV"
+
     CMP = "CMP"
+    C = "C"
+
+    J = "J"
     JZ = "JZ"
     JN = "JN"
-    J = "J"
-    ALL = {MOV, ADD, SUB, HALT, CMP, J, JZ, JN}
+    B = "B"
+
+    HALT = "HALT"
+
+    ALL = {
+        MOV, ADD, SUB, MUL, DIV,
+        CMP, C,
+        J, JZ, JN, B,
+        HALT
+    }

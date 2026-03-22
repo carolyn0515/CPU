@@ -1,16 +1,22 @@
 from isa.instruction import Opcode
 
 class CPU:
-    def __init__(self, memory, pc, registers, flags):
+    def __init__(self, memory, pc, ir, registers, flags):
         self.memory = memory
         self.pc = pc
+        self.ir = ir
         self.registers = registers
         self.flags = flags
 
     def run(self):
+
         while True:
             address = self.pc.get()
-            instr = self.memory.read(address)
+            fetched = self.memory.read(address)
+            self.ir.load(fetched)
+            instr = self.ir.read()
+    
+            print(f"[PC={address}] Executing: {instr}")
 
             opcode = instr.opcode
             operands = instr.operands
@@ -59,6 +65,41 @@ class CPU:
                 target = self.resolve_operand(operands[0])
                 self.pc.set(target)
                 continue
+            
+            elif opcode == Opcode.MUL:
+                op1 = operands[0]
+                op2 = operands[1]
+                v1 = self.resolve_operand(op1)
+                v2 = self.resolve_operand(op2)
+                self.registers.write("R0", v1 * v2)
+
+            elif opcode == Opcode.DIV:
+                op1 = operands[0]
+                op2 = operands[1]
+                v1 = self.resolve_operand(op1)
+                v2 = self.resolve_operand(op2)
+
+                if v2 == 0:
+                    raise ZeroDivisionError("Division by zero")
+
+                self.registers.write("R0", v1 // v2)
+
+            elif opcode == Opcode.C:
+                op1 = operands[0]
+                op2 = operands[1]
+                v1 = self.resolve_operand(op1)
+                v2 = self.resolve_operand(op2)
+
+                if v1 < v2:
+                    self.registers.write("R0", 1)
+                else:
+                    self.registers.write("R0", 0)
+            
+            elif opcode == Opcode.B:
+                target = self.resolve_operand(operands[0])
+                if self.registers.read("R0") == 1:
+                    self.pc.set(target)
+                    continue
 
             elif opcode == Opcode.HALT:
                 print(self.registers.dump())

@@ -1,0 +1,8 @@
+MOV R1, 1
+MOV R2, 3
+C R1, R2
+B 6
+MOV R3, 0
+J 7
+MOV R3, 1
+HALT

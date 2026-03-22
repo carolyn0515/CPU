@@ -1,0 +1,4 @@
+MOV R1, 6
+MOV R2, 7
+MUL R1, R2
+HALT

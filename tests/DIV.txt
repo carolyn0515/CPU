@@ -1,0 +1,4 @@
+MOV R1, 20
+MOV R2, 4
+DIV R1, R2
+HALT
