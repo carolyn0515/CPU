@@ -1,429 +1,253 @@
 
 ---
 
-# 🧠 CPU Simulator
+# HW1 CPU Simulator
 
-This project implements a modular CPU simulator that models how fundamental hardware components cooperate to execute instructions.
+## 1. Overview
 
-Rather than implementing instruction execution as a simple sequential program,
-this simulator explicitly separates CPU responsibilities into logical hardware-like units:
+This project implements a simple CPU simulator based on the Von Neumann model.
+It supports arithmetic operations, data movement, comparison, branching, and program termination.
+The simulator reads assembly-like programs, assembles them into internal instructions, loads them into memory, and executes them step by step.
 
-* Control Unit
-* Register Unit
-* Memory Unit
-* Processing Unit
+The simulator includes the following architectural components:
 
-The simulator focuses on realistic modeling of:
-
-* Instruction cycle stages
-* Internal register transfers
-* Control signal orchestration
-* Memory interaction
-* Data path movement
-
-This architecture enables extensibility toward advanced CPU features such as pipeline simulation, interrupt handling, and cache hierarchy modeling.
+* Memory
+* Program Counter (PC)
+* Instruction Register (IR)
+* Register File (`R0`–`R9`)
+* Flags
+* CPU
+* Assembler
+* Loader
 
 ---
 
-# 📦 Project Structure
+## 2. Project Structure
 
 ```text
 HW1/
-│
 ├── assembler/
-│
+│   ├── assembler.py
+│   └── parser.py
 ├── devices/
-│   ├── control_unit/
-│   │   ├── control_unit.py
-│   │   ├── state_machine.py
-│   │   ├── micro_ops.py
-│   │   └── role.md
-│   │
 │   ├── memory_unit/
-│   │   ├── memory.py
-│   │   ├── memory_io.py
-│   │   ├── mar.py
-│   │   ├── mdr.py
-│   │   └── role.md
-│   │
+│   │   └── memory.py
 │   ├── processing_unit/
-│   │   ├── alu.py
-│   │   ├── flags.py
-│   │   ├── temp_register.py
-│   │   └── role.md
-│   │
-│   ├── register_unit/
-│   │   ├── pc.py
-│   │   ├── ir.py
-│   │   ├── sp.py
-│   │   ├── gpr.py
-│   │   ├── register_file.py
-│   │   └── role.md
-│
+│   │   └── flags.py
+│   └── register_unit/
+│       ├── ir.py
+│       ├── pc.py
+│       └── register_file.py
 ├── execution/
+│   ├── cpu.py
+│   └── loader.py
 ├── isa/
-├── programs/
+│   └── instruction.py
 ├── tests/
+│   ├── ADD.txt
+│   ├── B.txt
+│   ├── B_not_taken.txt
+│   ├── C_equal.txt
+│   ├── C_false.txt
+│   ├── C_true.txt
+│   ├── DIV.txt
+│   ├── DIV_zero.txt
+│   ├── GCD.txt
+│   ├── JN.txt
+│   ├── JZ.txt
+│   ├── MOV.txt
+│   ├── MUL.txt
+│   └── MUL_DIV_mix.txt
 ├── main.py
 └── README.md
 ```
 
 ---
 
-# 🧩 CPU Architecture Overview
+## 3. Execution Flow
 
-The simulator models a classical CPU architecture where execution is driven by a control unit coordinating register transfers and computation.
+The simulator works in the following order:
 
-Each device module represents a logical hardware component.
-
----
-
-## 🎛 Control Unit
-
-Controls the entire instruction execution process.
-
-### `control_unit.py`
-
-* Orchestrates instruction cycle
-* Determines execution sequence
-* Updates Program Counter
-* Handles branching, jumping, and HALT
-
-### `state_machine.py`
-
-Defines CPU execution stages:
-
-* FETCH
-* DECODE
-* OPERAND_FETCH
-* EXECUTE
-* WRITE_BACK
-
-Controls transition between stages.
-
-### `micro_ops.py`
-
-Defines internal CPU micro-operations such as:
-
-* Instruction fetch sequence
-* Register-to-ALU data transfer
-* Memory read/write control
-* Result write-back
+1. Read program text
+2. Parse each line into an `Instruction`
+3. Resolve labels into instruction addresses
+4. Load instructions into memory
+5. Fetch the current instruction using PC
+6. Store the fetched instruction in IR
+7. Decode and execute the instruction
+8. Update registers, flags, or PC
+9. Stop at `HALT`
 
 ---
 
-## 💾 Memory Unit
+## 4. Supported Instructions
 
-Handles storage and CPU–memory communication.
+### Arithmetic and Data Movement
 
-### `memory.py`
+* `MOV dst, src`
+* `ADD op1, op2` → `R0 = op1 + op2`
+* `SUB op1, op2` → `R0 = op1 - op2`
+* `MUL op1, op2` → `R0 = op1 * op2`
+* `DIV op1, op2` → `R0 = op1 // op2`
+* `HALT`
 
-* Represents main memory
-* Stores instructions and runtime data
+### Slide-Based Comparison and Branch
 
-### `memory_io.py`
+* `C op1, op2`
 
-* Provides memory access interface
+  * `R0 = 1` if `op1 < op2`
+  * otherwise `R0 = 0`
+* `B target`
 
-  * `read(address)`
-  * `write(address, value)`
+  * branch only if `R0 == 1`
 
-### `mar.py`
+### Extended Instructions
 
-* Memory Address Register
-* Holds address for memory access
+* `CMP op1, op2`
 
-### `mdr.py`
-
-* Memory Data Register
-* Temporarily stores data read from or written to memory
-
----
-
-## 🧮 Processing Unit
-
-Performs arithmetic and logical operations.
-
-### `alu.py`
-
-Implements operations:
-
-* ADD
-* SUB
-* AND
-* OR
-* CMP
-
-### `flags.py`
-
-Stores CPU condition flags:
-
-* Zero
-* Carry
-* Sign
-* Overflow
-
-### `temp_register.py`
-
-* Temporary storage for ALU results
-* Used before write-back stage
+  * updates `zero` and `negative` flags from `op1 - op2`
+* `J target`
+* `JZ target`
+* `JN target`
 
 ---
 
-## 📚 Register Unit
+## 5. Key Design Points
 
-Maintains CPU internal execution state.
-
-### `pc.py`
-
-* Program Counter
-* Holds address of next instruction
-
-### `ir.py`
-
-* Instruction Register
-* Stores currently executing instruction
-
-### `sp.py`
-
-* Stack Pointer
-* Used for stack-based instructions
-
-### `gpr.py`
-
-* Defines general-purpose registers
-
-### `register_file.py`
-
-* Unified interface for reading/writing general registers
+* The simulator explicitly implements both **PC** and **IR** to reflect the Von Neumann model more clearly.
+* Arithmetic results are stored in `R0`.
+* `C` and `B` follow the slide semantics directly.
+* `CMP`, `J`, `JZ`, and `JN` were additionally implemented as extended control-flow instructions.
+* The assembler supports label resolution for `J`, `JZ`, `JN`, and `B`.
 
 ---
 
-# 🧾 Assembler Layer
+## 6. Error Handling
 
-Located in `assembler/`.
+Division by zero is handled gracefully.
 
-Responsible for:
-
-* Parsing assembly programs
-* Resolving labels
-* Validating opcode and operand formats
-* Generating internal instruction objects
-
----
-
-# 📐 ISA Layer
-
-Located in `isa/`.
-
-Defines:
-
-* Instruction formats
-* Opcode definitions
-* Addressing modes
-* Operand semantics
-
-The Control Unit relies on ISA definitions during instruction decoding.
-
----
-
-# ⚙ Execution Engine
-
-Located in `execution/`.
-
-Responsibilities:
-
-* Initialize CPU components
-* Run instruction execution loop
-* Support micro-step execution
-* Provide execution tracing and debugging
-
----
-
-# 🚀 Entry Point
-
-`main.py` performs:
-
-* Program loading
-* CPU initialization
-* Execution start
-* Final state output
-
----
-
-# 🔄 Instruction Execution Cycle
-
-The CPU repeatedly executes:
+Example:
 
 ```text
-FETCH → DECODE → OPERAND FETCH → EXECUTE → WRITE BACK → REPEAT
+MOV R1, 10
+MOV R2, 0
+DIV R1, R2
+HALT
 ```
 
-Execution continues until a HALT instruction is encountered.
-
----
-
-# ⚡ Detailed Runtime Flow
-
-## 1. Program Load
-
-1. Assembly program is parsed by `assembler/`
-2. ISA rules from `isa/` define instruction semantics
-3. Instructions are written into memory using:
-
-   * `memory_io.py`
-   * `memory.py`
-
----
-
-## 2. CPU Initialization
-
-Registers and internal components are reset:
-
-* PC initialized to program start
-* IR cleared
-* SP set to stack base
-* GPR reset
-* MAR / MDR cleared
-* FLAGS reset
-* TEMP register cleared
-* State machine set to FETCH
-
----
-
-## 3. FETCH Stage
-
-Files involved:
-
-* `pc.py`
-* `mar.py`
-* `memory_io.py`
-* `memory.py`
-* `mdr.py`
-* `ir.py`
-* `micro_ops.py`
-
-Execution:
+Output:
 
 ```text
-MAR ← PC
-MDR ← Memory[MAR]
-IR ← MDR
-PC ← PC + 1
+Runtime Error: Division by zero
 ```
 
 ---
 
-## 4. DECODE Stage
+## 7. Test Programs
 
-Files involved:
+The `tests/` directory contains programs for each major function:
 
-* `ir.py`
-* `control_unit.py`
-* `state_machine.py`
-* `isa/`
-
-Control Unit determines:
-
-* Opcode type
-* Operand structure
-* Addressing mode
-* Required execution path
+* Arithmetic: `ADD.txt`, `MUL.txt`, `DIV.txt`, `DIV_zero.txt`, `MUL_DIV_mix.txt`
+* Data movement: `MOV.txt`
+* `C/B` semantics: `C_true.txt`, `C_false.txt`, `C_equal.txt`, `B.txt`, `B_not_taken.txt`
+* Extended branch instructions: `JN.txt`, `JZ.txt`
+* Full program example: `GCD.txt`
 
 ---
 
-## 5. OPERAND FETCH Stage
+## 8. Example Output
 
-Operands are prepared using:
+### Example 1: `ADD.txt`
 
-* `register_file.py`
-* `gpr.py`
-* `memory_unit` modules (if memory access required)
-
----
-
-## 6. EXECUTE Stage
-
-Files involved:
-
-* `alu.py`
-* `flags.py`
-* `temp_register.py`
-* `control_unit.py`
-
-Operations performed:
-
-* Arithmetic/logic computation
-* Flag updates
-* Branch condition evaluation
-* Memory access (for LOAD / STORE)
-
----
-
-## 7. WRITE BACK Stage
-
-Results are committed to:
-
-* Register File
-* Memory
-* Program Counter
-
-Files involved:
-
-* `register_file.py`
-* `memory_io.py`
-* `temp_register.py`
-* `pc.py`
-
----
-
-## 8. Next Instruction
-
-`state_machine.py` transitions back to FETCH.
-Execution continues until HALT.
-
----
-
-# 🧠 Example Instruction Lifecycle
-
-Instruction:
+Program:
 
 ```text
+MOV R1, 3
+MOV R2, 7
 ADD R1, R2
+HALT
 ```
 
-Execution sequence:
+Output:
 
-1. Fetch instruction into IR
-2. Decode operands
-3. Read R1 and R2 from register file
-4. ALU computes result
-5. Flags updated
-6. Result stored in R1
-7. Next instruction fetch begins
+```text
+[PC=0] Executing: MOV R1, 3
+[PC=1] Executing: MOV R2, 7
+[PC=2] Executing: ADD R1, R2
+[PC=3] Executing: HALT
+{'R0': 10, 'R1': 3, 'R2': 7, 'R3': 0, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
+```
+
+### Example 2: `B.txt`
+
+Program:
+
+```text
+MOV R1, 1
+MOV R2, 3
+C R1, R2
+B 6
+MOV R3, 0
+J 7
+MOV R3, 1
+HALT
+```
+
+Output:
+
+```text
+[PC=0] Executing: MOV R1, 1
+[PC=1] Executing: MOV R2, 3
+[PC=2] Executing: C R1, R2
+[PC=3] Executing: B 6
+[PC=6] Executing: MOV R3, 1
+[PC=7] Executing: HALT
+{'R0': 1, 'R1': 1, 'R2': 3, 'R3': 1, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
+```
+
+### Example 3: `GCD.txt`
+
+Output:
+
+```text
+[PC=0] Executing: MOV R1, 12
+[PC=1] Executing: MOV R2, 8
+[PC=2] Executing: CMP R1, R2
+[PC=3] Executing: JZ 11
+[PC=4] Executing: JN 8
+[PC=5] Executing: SUB R1, R2
+[PC=6] Executing: MOV R1, R0
+[PC=7] Executing: J 2
+...
+[PC=11] Executing: HALT
+{'R0': 4, 'R1': 4, 'R2': 4, 'R3': 0, 'R4': 0, 'R5': 0, 'R6': 0, 'R7': 0, 'R8': 0, 'R9': 0}
+```
 
 ---
 
-# 🎯 Design Goals
+## 9. How to Run
 
-* Explicit modeling of register transfer operations
-* Separation of control logic and datapath
-* Realistic instruction cycle simulation
-* Modular hardware abstraction
-* Expandability toward:
+Run the simulator with:
 
-  * Stack execution
-  * Interrupt handling
-  * Pipeline architecture
-  * Cache hierarchy modeling
+```bash
+python main.py
+```
+
+The program automatically executes all test files in the `tests/` directory.
 
 ---
 
-# ✅ Conclusion
+## 10. Summary
 
-This CPU simulator demonstrates how independent hardware-like units collaborate to execute instructions.
+This project implements a modular CPU simulator with:
 
-By modeling control flow, register state transitions, ALU operations, and memory interaction explicitly,
-the project provides a structured and extensible framework for CPU architecture simulation.
+* explicit memory, PC, and IR
+* assembler and loader
+* arithmetic and movement instructions
+* slide-based comparison and branch (`C`, `B`)
+* extended control-flow instructions (`CMP`, `J`, `JZ`, `JN`)
+* label-based jumps
+* graceful runtime error handling
+* step-by-step execution trace output
 
 ---

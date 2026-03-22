@@ -7,7 +7,7 @@ from devices.memory_unit.memory import Memory
 from devices.register_unit.pc import ProgramCounter
 from devices.register_unit.register_file import RegisterFile
 from devices.processing_unit.flags import Flags
-
+from devices.register_unit.ir import InstructionRegister
 
 def run_program(program_text):
     # 1. assemble
@@ -25,10 +25,14 @@ def run_program(program_text):
     flags = Flags()
 
     # 5. cpu 생성
-    cpu = CPU(memory, pc, registers, flags)
+    ir = InstructionRegister()
+    cpu = CPU(memory, pc, ir, registers, flags)
 
     # 6. 실행
-    cpu.run()
+    try:
+        cpu.run()
+    except ZeroDivisionError as e:
+        print(f"Runtime Error: {e}")
 
 
 def main():

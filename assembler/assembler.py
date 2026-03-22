@@ -1,9 +1,3 @@
-# 여러 줄 문자열 입력
-# 줄마다 parse_line 호출
-# Instruction list 셍성
-
-# [assemble() → parse_line() → Instruction]
-
 from assembler.parser import parse_line
 
 def assemble(program_text: str):
@@ -33,7 +27,7 @@ def assemble(program_text: str):
 
         inst = parse_line(stripped)
 
-        if inst.opcode in {"J", "JZ", "JN"}:
+        if inst.opcode in {"J", "JZ", "JN", "B"}:
             target = inst.operands[0]
             if isinstance(target, str) and target in labels:
                 inst.operands[0] = labels[target]
