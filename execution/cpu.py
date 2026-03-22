@@ -1,10 +1,11 @@
 from isa.instruction import Opcode
 
 class CPU:
-    def __init__(self, memory, pc, registers):
+    def __init__(self, memory, pc, registers, flags):
         self.memory = memory
         self.pc = pc
         self.registers = registers
+        self.flags = flags
 
     def run(self):
         while True:
@@ -18,30 +19,53 @@ class CPU:
                 dst = operands[0]
                 src = operands[1]
                 value = self.resolve_operand(src)
-                self.registers.write(dst,value)
-                
+                self.registers.write(dst, value)
 
             elif opcode == Opcode.ADD:
                 op1 = operands[0]
                 op2 = operands[1]
                 v1 = self.resolve_operand(op1)
                 v2 = self.resolve_operand(op2)
-                self.registers.write("R0", v1+v2)
+                self.registers.write("R0", v1 + v2)
 
             elif opcode == Opcode.SUB:
                 op1 = operands[0]
-            
                 op2 = operands[1]
                 v1 = self.resolve_operand(op1)
                 v2 = self.resolve_operand(op2)
-                self.registers.write("R0", v1-v2)
+                self.registers.write("R0", v1 - v2)
+
+            elif opcode == Opcode.CMP:
+                op1 = operands[0]
+                op2 = operands[1]
+                v1 = self.resolve_operand(op1)
+                v2 = self.resolve_operand(op2)
+                result = v1 - v2
+                self.flags.update_from_result(result)
+
+            elif opcode == Opcode.JZ:
+                target = self.resolve_operand(operands[0])
+                if self.flags.zero:
+                    self.pc.set(target)
+                    continue
+
+            elif opcode == Opcode.JN:
+                target = self.resolve_operand(operands[0])
+                if self.flags.negative:
+                    self.pc.set(target)
+                    continue
+
+            elif opcode == Opcode.J:
+                target = self.resolve_operand(operands[0])
+                self.pc.set(target)
+                continue
 
             elif opcode == Opcode.HALT:
                 print(self.registers.dump())
                 break
 
             self.pc.increment()
-    
+
     def resolve_operand(self, operand):
         if isinstance(operand, int):
             return operand

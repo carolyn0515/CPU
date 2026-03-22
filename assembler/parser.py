@@ -14,7 +14,7 @@ def parse_operand(token: str):
     try:
         return int(token)
     except ValueError:
-        raise ValueError(f"Invalid operand: {token}")
+        return token
 
 def parse_line(line: str):
     line = line.strip()

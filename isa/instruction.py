@@ -35,4 +35,8 @@ class Opcode:
     ADD = "ADD"
     SUB = "SUB"
     HALT = "HALT"
-    ALL = {MOV, ADD, SUB, HALT}
+    CMP = "CMP"
+    JZ = "JZ"
+    JN = "JN"
+    J = "J"
+    ALL = {MOV, ADD, SUB, HALT, CMP, J, JZ, JN}
