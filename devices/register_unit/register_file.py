@@ -11,5 +11,5 @@ class RegisterFile:
         if not isinstance(value, int):
             raise ValueError(f"Register value must be int: {value}")
         self.regs[name] = value
-    def dump(self):
+    def dump (self):
         return dict(self.regs)
